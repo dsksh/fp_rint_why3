@@ -1,0 +1,112 @@
+
+(** {1 Useful Lemmas for Inequality on Real} *)
+
+module RmultLeCompat
+
+  use real.Real
+  (* use RMultLeCompatHint *)
+
+  (* Coq
+    Proof.
+      intros r1 r2 r3 r4 [[H0 H1] [H2 H3]]; auto with real.
+    Qed.
+   *)
+  lemma Rmult_le_compat_pos_pos: forall r1 r2 r3 r4 [r1 * r3 <= r2 * r4].
+    0. <= r1 <= r2 /\ 0. <= r3 <= r4
+    -> r1 * r3 <= r2 * r4
+
+  (* Coq
+    Proof.
+      intros r1 r2 r3 r4 [[H0 H1] [H2 H3]].
+      apply Ropp_le_cancel.
+      do 2 rewrite Ropp_mult_distr_r.
+      auto with real.
+    Qed.
+   *)
+  lemma Rmult_le_compat_pos_neg: forall r1 r2 r3 r4 [r2 * r3 <= r1 * r4].
+    0. <= r1 <= r2 /\ r3 <= r4 <= 0.
+    -> r2 * r3 <= r1 * r4
+
+  (* Coq
+    Proof.
+      intros r1 r2 r3 r4 [[H1 H2] [H3 H4]].
+      apply Ropp_le_cancel.
+      do 2 rewrite Ropp_mult_distr_l.
+      auto with real.
+    Qed.
+   *)
+  lemma Rmult_le_compat_neg_pos: forall r1 r2 r3 r4 [r1 * r4 <= r2 * r3].
+    r1 <= r2 <= 0. /\ 0. <= r3 <= r4
+    -> r1 * r4 <= r2 * r3
+
+  (* Coq
+    Proof.
+      intros r1 r2 r3 r4 [[H1 H2] [H3 H4]].
+      rewrite <- (Rmult_opp_opp r2).
+      rewrite <- (Rmult_opp_opp r1).
+      auto with real.
+    Qed.
+   *)
+  lemma Rmult_le_compat_neg_neg: forall r1 r2 r3 r4 [r2 * r4 <= r1 * r3].
+    r1 <= r2 <= 0. /\ r3 <= r4 <= 0.
+    -> r2 * r4 <= r1 * r3
+
+end
+
+module Rinv
+
+  use real.Real
+
+  (* Coq
+    Proof.
+      auto.
+    Qed.
+  *)
+  lemma Rinv_mul_div: forall x y [x / y].
+    x * (inv y) = x / y
+
+  (* Z3 or Coq
+    Proof.
+      intros; apply Rinv_le_contravar; tauto.
+    Qed.
+  *)
+  lemma Rle_inv_le_plus: forall x y.
+    0. < x <= y -> inv x >= inv y
+
+  (* Coq
+    Proof.
+      intros x y [H1 H2].
+      apply Ropp_le_cancel.
+      repeat rewrite Ropp_inv_permute; auto with real.
+      apply Rinv_le_contravar; auto with real.
+      apply Rle_lt_trans with (r3 := 0%R) in H1; auto with real.
+    Qed.
+   *)
+  lemma Rle_inv_le_minus: forall x y.
+    x <= y < 0. -> inv x >= inv y
+
+end
+
+module RdivLeCompat
+
+  use real.Real
+  use RmultLeCompat
+  use Rinv
+
+  lemma Rdiv_le_compat_pos_pos: forall r1 r2 r3 r4 [r1 / r4 <= r2 / r3].
+    0. <= r1 <= r2 /\ 0. < r3 <= r4
+    -> r1 / r4 <= r2 / r3
+
+  lemma Rdiv_le_compat_pos_neg: forall r1 r2 r3 r4 [r2 / r4 <= r1 / r3].
+    0. <= r1 <= r2 /\ r3 <= r4 < 0.
+    -> r2 / r4 <= r1 / r3
+
+  lemma Rdiv_le_compat_neg_pos: forall r1 r2 r3 r4 [r1 / r3 <= r2 / r4].
+    r1 <= r2 <= 0. /\ 0. < r3 <= r4
+    -> r1 / r3 <= r2 / r4
+
+  lemma Rdiv_le_compat_neg_neg: forall r1 r2 r3 r4 [r2 / r3 <= r1 / r4].
+    r1 <= r2 <= 0. /\ r3 <= r4 < 0.
+    -> r2 / r3 <= r1 / r4
+
+end
