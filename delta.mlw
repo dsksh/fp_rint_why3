@@ -68,52 +68,23 @@ module Addition
   use ieee_float.Float64
   use RealInterval
 
-  let op (x:t) (y:t)
+  let op (x y : t) : t
     requires { ordered x /\ ordered y }
     ensures { ordered result }
 
-    ensures { forall xx. forall yy. 
+    (*ensures { forall xx. forall yy. 
       (*(t'isFinite xx /\ x.l <= t'real xx /\ t'real xx <= x.u) ->
       (t'isFinite yy /\ y.l <= t'real yy /\ t'real yy <= y.u) ->*)
       (x.l <= t'real xx /\ t'real xx <= x.u) ->
       (y.l <= t'real yy /\ t'real yy <= y.u) ->
-      result.l <= (t'real xx) + (t'real yy) /\ (t'real xx) + (t'real yy) <= result.u
-      (*t'isFinite (xx .+ yy) -> result.l <= t'real (xx .+ yy)*)
-    }
-    (*ensures { forall xx. forall yy.
-      (t'isFinite xx /\ x.l <= t'real xx /\ t'real xx <= x.u) ->
-      (t'isFinite yy /\ y.l <= t'real yy /\ t'real yy <= y.u) ->
-      no_overflow RTN (t'real xx + t'real yy) ->
-      t'isFinite (add RTN xx yy) -> result.l <= t'real (add RTN xx yy) 
-    }
-    ensures { forall xx. forall yy.
-      (t'isFinite xx /\ x.l <= t'real xx /\ t'real xx <= x.u) ->
-      (t'isFinite yy /\ y.l <= t'real yy /\ t'real yy <= y.u) ->
-      no_overflow RTP (t'real xx + t'real yy) ->
-      t'isFinite (add RTP xx yy) -> t'real (add RTP xx yy) <= result.u
-    }*)
-    (*ensures { forall m. forall xx. forall yy. 
-      (t'isFinite xx /\ x.l <= t'real xx /\ t'real xx <= x.u) ->
-      (t'isFinite yy /\ y.l <= t'real yy /\ t'real yy <= y.u) ->
-      no_overflow m (t'real xx + t'real yy) ->
-      t'isFinite (add m xx yy) -> result.l <= t'real (add m xx yy) 
-    }*)
+      result.l <= (t'real xx) + (t'real yy) /\ (t'real xx) + (t'real yy) <= result.u }
 
     ensures { forall xx. forall yy.
       (t'isFinite xx /\ x.l <= t'real xx /\ t'real xx <= x.u) ->
       (t'isFinite yy /\ y.l <= t'real yy /\ t'real yy <= y.u) ->
       no_overflow RNE (t'real xx + t'real yy) ->
       t'isFinite (xx .+ yy) -> 
-      result.l <= t'real (xx .+ yy) /\ t'real (xx .+ yy) <= result.u
-    }
-
-    (*ensures { forall xx. forall yy. (*fp_in_ri xx x -> fp_in_ri yy y ->*)
-      (t'isFinite xx /\ x.l <= t'real xx /\ t'real xx <= x.u) ->
-      (t'isFinite yy /\ y.l <= t'real yy /\ t'real yy <= y.u) ->
-      (*not (no_overflow RNE (t'real xx + t'real yy)) ->*)
-      is_infinite (xx .+ yy) ->
-      is_inf_s result }
-    *)
+      result.l <= t'real (xx .+ yy) /\ t'real (xx .+ yy) <= result.u }
 
     ensures { forall xx. forall yy. (*fp_in_ri xx x -> fp_in_ri yy y ->*)
       (t'isFinite xx -> x.l <= t'real xx /\ t'real xx <= x.u) ->
@@ -129,21 +100,12 @@ module Addition
       (is_plus_infinity yy -> is_pinf_s y) -> (is_minus_infinity yy -> is_ninf_s y) ->
       is_plus_infinity (xx .+ yy) -> result.u = large_real }
 
-    (*ensures { forall xx. forall yy. (*fp_in_ri xx x -> fp_in_ri yy y ->*)
-      (*(is_nan xx -> x.p_nan) -> (is_nan yy -> x.p_nan) ->*)
-      (t'isFinite xx -> x.l <= t'real xx /\ t'real xx <= x.u) ->
-      (t'isFinite yy -> y.l <= t'real yy /\ t'real yy <= y.u) ->
-      (is_plus_infinity xx -> is_pinf_s x) -> (is_minus_infinity xx -> is_ninf_s x) -> 
-      (is_plus_infinity yy -> is_pinf_s y) -> (is_minus_infinity yy -> is_ninf_s y) ->
-      (*(t'isFinite xx /\ is_plus_infinity yy /\ not is_ninf y) ->*)
-      is_infinite (xx .+ yy) -> is_inf_s result }
-    *)
-
     ensures { forall xx. forall yy. (*fp_in_ri xx x -> fp_in_ri yy y ->*)
       (is_nan xx -> x.p_nan) -> (is_nan yy -> x.p_nan) -> 
       (is_plus_infinity xx -> is_pinf x) -> (is_minus_infinity xx -> is_ninf x) -> 
       (is_plus_infinity yy -> is_pinf y) -> (is_minus_infinity yy -> is_ninf y) ->
       is_nan (xx .+ yy) -> result.p_nan }
+    *)
 
     ensures { forall xx. forall yy. fp_in_ri xx x -> fp_in_ri yy y ->
       fp_in_ri (xx .+ yy) result }
@@ -176,42 +138,39 @@ module Subtraction
     requires { ordered x /\ ordered y }
     ensures { ordered result }
 
+    (*
     ensures { forall xx. forall yy. 
       (x.l <= t'real xx /\ t'real xx <= x.u) ->
       (y.l <= t'real yy /\ t'real yy <= y.u) ->
-      result.l <= (t'real xx) - (t'real yy) /\ (t'real xx) - (t'real yy) <= result.u
-    }
+      result.l <= (t'real xx) - (t'real yy) /\ (t'real xx) - (t'real yy) <= result.u }
 
     ensures { forall xx. forall yy.
       (t'isFinite xx /\ x.l <= t'real xx /\ t'real xx <= x.u) ->
       (t'isFinite yy /\ y.l <= t'real yy /\ t'real yy <= y.u) ->
       no_overflow RNE (t'real xx - t'real yy) ->
       t'isFinite (xx .- yy) -> 
-      result.l <= t'real (xx .- yy) /\ t'real (xx .- yy) <= result.u
-    }
+      result.l <= t'real (xx .- yy) /\ t'real (xx .- yy) <= result.u }
 
     ensures { forall xx. forall yy.
       (t'isFinite xx -> x.l <= t'real xx /\ t'real xx <= x.u) ->
       (t'isFinite yy -> y.l <= t'real yy /\ t'real yy <= y.u) ->
       (is_plus_infinity xx -> is_pinf_s x) -> (is_minus_infinity xx -> is_ninf_s x) -> 
       (is_plus_infinity yy -> is_pinf_s y) -> (is_minus_infinity yy -> is_ninf_s y) ->
-      is_minus_infinity (xx .- yy) -> result.l = (- large_real) 
-    }
+      is_minus_infinity (xx .- yy) -> result.l = (- large_real) }
 
     ensures { forall xx. forall yy.
       (t'isFinite xx -> x.l <= t'real xx /\ t'real xx <= x.u) ->
       (t'isFinite yy -> y.l <= t'real yy /\ t'real yy <= y.u) ->
       (is_plus_infinity xx -> is_pinf_s x) -> (is_minus_infinity xx -> is_ninf_s x) -> 
       (is_plus_infinity yy -> is_pinf_s y) -> (is_minus_infinity yy -> is_ninf_s y) ->
-      is_plus_infinity (xx .- yy) -> result.u = large_real 
-    } 
+      is_plus_infinity (xx .- yy) -> result.u = large_real } 
 
     ensures { forall xx. forall yy.
       (is_nan xx -> x.p_nan) -> (is_nan yy -> x.p_nan) -> 
       (is_plus_infinity xx -> is_pinf x) -> (is_minus_infinity xx -> is_ninf x) -> 
       (is_plus_infinity yy -> is_pinf y) -> (is_minus_infinity yy -> is_ninf y) ->
-      is_nan (xx .- yy) -> result.p_nan
-    }
+      is_nan (xx .- yy) -> result.p_nan }
+    *)
 
     ensures { forall xx. forall yy. fp_in_ri xx x -> fp_in_ri yy y ->
       fp_in_ri (xx .- yy) result
@@ -230,10 +189,10 @@ module Subtraction
 
 end
 
-module RmultLeCompat
-
+module Multiplication
   use real.Real
-  (* use RMultLeCompatHint *)
+  use ieee_float.Float64
+  use RealInterval
 
   (* Coq
     Proof.
@@ -280,14 +239,6 @@ module RmultLeCompat
     r1 <= r2 <= 0. /\ r3 <= r4 <= 0.
     -> r2 * r4 <= r1 * r3
 
-end
-
-module Multiplication
-  use real.Real
-  use ieee_float.Float64
-  use RealInterval
-  use RmultLeCompat
-
   (*lemma mul_down_positive_finite: forall x y.
     is_positive (mul_down x y) /\ t'isFinite (mul_down x y) -> 
       0. <= x * y /\ round RTN 0. <= round RTN (x * y) *)
@@ -304,11 +255,11 @@ module Multiplication
     is_negative (mul RTN xx yy)
   *)
 
-  lemma Rmult_fin_ninf: forall xx yy.
+  lemma mult_fin_ninf: forall xx yy.
     t'isFinite xx -> t'isFinite yy -> is_minus_infinity (mul RTN xx yy) ->
     round RTN (t'real xx * t'real yy) < (- max_real)
 
-  lemma Rmult_ninf_conds: forall xx yy.
+  lemma mult_ninf_conds: forall xx yy.
     is_minus_infinity (mul RTN xx yy) ->
     ( t'isFinite xx /\ t'isFinite yy /\
       round RTN (t'real xx * t'real yy) < (- max_real) ) \/
@@ -319,11 +270,11 @@ module Multiplication
     (is_minus_infinity xx /\ is_plus_infinity yy) \/
     (is_plus_infinity xx  /\ is_minus_infinity yy)
 
-  lemma Rmult_fin_pinf: forall xx yy.
+  lemma mult_fin_pinf: forall xx yy.
     t'isFinite xx -> t'isFinite yy -> is_plus_infinity (mul RTP xx yy) ->
     round RTP (t'real xx * t'real yy) > max_real
 
-  lemma Rmult_pinf_conds: forall xx yy.
+  lemma mult_pinf_conds: forall xx yy.
     is_plus_infinity (mul RTP xx yy) ->
     ( t'isFinite xx /\ t'isFinite yy /\
       round RTP (t'real xx * t'real yy) > max_real ) \/
@@ -334,33 +285,20 @@ module Multiplication
     (is_minus_infinity xx /\ is_minus_infinity yy) \/
     (is_plus_infinity xx  /\ is_plus_infinity yy)
 
-(*
-       (is_nan x \/ is_nan y -> is_nan r)
-    /\ (is_zero x /\ is_infinite y -> is_nan r)
-    /\ (is_finite x /\ is_infinite y /\ not (is_zero x)
-         -> is_infinite r)
-    /\ (is_infinite x /\ is_zero y -> is_nan r)
-    /\ (is_infinite x /\ is_finite y /\ not (is_zero  y)
-         -> is_infinite r)
-    /\ (is_infinite x /\ is_infinite y -> is_infinite r)
-    /\ (is_finite x /\ is_finite y /\ not no_overflow m (to_real x *. to_real y)
-         -> overflow_value m r)
-    /\ (not is_nan r -> product_sign r x y)
-*)
-
-  lemma Rmult_nan_conds: forall xx yy. forall m.
+  lemma mult_nan_conds: forall xx yy. forall m.
     is_nan (mul m xx yy) ->
     (is_nan xx \/ is_nan yy) \/
     (is_zero xx /\ is_infinite yy) \/
     (is_infinite xx /\ is_zero yy)
 
-  (*lemma Rmult_bnd: forall x y. in_range x -> in_range y ->
+  (*lemma mult_bnd: forall x y. in_range x -> in_range y ->
     - large_real < x * y /\ x * y < large_real*)
 
-  let op (x:t) (y:t)
+  let op (x y : t) : t
     requires { ordered x /\ ordered y }
     requires { - large_real <= x.l /\ x.u <= large_real }
     requires { - large_real <= y.l /\ y.u <= large_real }
+
     ensures { ordered result }
 
     (*ensures { forall xx. forall yy. 
@@ -381,31 +319,11 @@ module Multiplication
       no_overflow RTP (t'real xx * t'real yy) ->
       t'isFinite (mul RTP xx yy) -> t'real (mul RTP xx yy) <= result.u }
 
-    (*
-    /\ (is_finite x /\ is_infinite y /\ not (is_zero x) -> is_infinite r)
-    /\ (is_infinite x /\ is_finite y /\ not (is_zero  y) -> is_infinite r)
-    /\ (is_infinite x /\ is_infinite y -> is_infinite r)
-    /\ (is_finite x /\ is_finite y /\ not no_overflow m (to_real x *. to_real y)
-         -> overflow_value m r)
-    *)
-
     ensures { forall xx. forall yy.
       (t'isFinite xx /\ x.l <= t'real xx /\ t'real xx <= x.u) ->
       (t'isFinite yy /\ y.l <= t'real yy /\ t'real yy <= y.u) ->
       (*round RTN (t'real xx * t'real yy) < (- max_real) -> result.l = (- large_real)*)
-      is_minus_infinity (mul RTN xx yy) -> result.l = (- large_real)
-    }
-
-    (*ensures { forall xx. forall yy.
-      (t'isFinite xx -> x.l <= t'real xx /\ t'real xx <= x.u) ->
-      (t'isFinite yy -> y.l <= t'real yy /\ t'real yy <= y.u) ->
-      (is_plus_infinity xx -> is_pinf_s x /\ x.l > 0.) -> 
-      (is_minus_infinity xx -> is_ninf_s x /\ x.u < 0.) -> 
-      (is_plus_infinity yy -> is_pinf_s y /\ y.l > 0.) -> 
-      (is_minus_infinity yy -> is_ninf_s y /\ y.u < 0.) ->
-      is_minus_infinity (mul RTN xx yy) -> result.l = (- large_real)
-      (*round RNE (t'real xx * t'real yy) < (- max_real) -> result.l = (- large_real)*)
-    }*)
+      is_minus_infinity (mul RTN xx yy) -> result.l = (- large_real) }
 
     ensures { forall xx. forall yy.
       (t'isFinite xx -> x.l <= t'real xx /\ t'real xx <= x.u) ->
@@ -417,8 +335,7 @@ module Multiplication
     ensures { forall xx. forall yy.
       (t'isFinite xx /\ x.l <= t'real xx /\ t'real xx <= x.u) ->
       (t'isFinite yy /\ y.l <= t'real yy /\ t'real yy <= y.u) ->
-      is_plus_infinity (mul RTP xx yy) -> result.u = large_real
-    }
+      is_plus_infinity (mul RTP xx yy) -> result.u = large_real }
 
     ensures { forall xx. forall yy.
       (t'isFinite xx -> x.l <= t'real xx /\ t'real xx <= x.u) ->
@@ -707,6 +624,314 @@ module Multiplication
 
     end
 end
+
+module Division
+  use real.Real
+  use ieee_float.Float64
+  use RealInterval
+
+  (* Coq
+    Proof.
+      auto.
+    Qed.
+  *)
+  lemma Rinv_mul_div: forall x y [x / y].
+    x * (inv y) = x / y
+
+  (* Z3 or Coq
+    Proof.
+      intros; apply Rinv_le_contravar; tauto.
+    Qed.
+  *)
+  lemma Rle_inv_le_plus: forall x y.
+    0. < x <= y -> inv x >= inv y
+
+  (* Coq
+    Proof.
+      intros x y [H1 H2].
+      apply Ropp_le_cancel.
+      repeat rewrite Ropp_inv_permute; auto with real.
+      apply Rinv_le_contravar; auto with real.
+      apply Rle_lt_trans with (r3 := 0%R) in H1; auto with real.
+    Qed.
+   *)
+  lemma Rle_inv_le_minus: forall x y.
+    x <= y < 0. -> inv x >= inv y
+
+  lemma Rdiv_le_compat_pos_pos: forall r1 r2 r3 r4 [r1 / r4 <= r2 / r3].
+    0. <= r1 <= r2 /\ 0. < r3 <= r4
+    -> r1 / r4 <= r2 / r3
+
+  lemma Rdiv_le_compat_pos_neg: forall r1 r2 r3 r4 [r2 / r4 <= r1 / r3].
+    0. <= r1 <= r2 /\ r3 <= r4 < 0.
+    -> r2 / r4 <= r1 / r3
+
+  lemma Rdiv_le_compat_neg_pos: forall r1 r2 r3 r4 [r1 / r3 <= r2 / r4].
+    r1 <= r2 <= 0. /\ 0. < r3 <= r4
+    -> r1 / r3 <= r2 / r4
+
+  lemma Rdiv_le_compat_neg_neg: forall r1 r2 r3 r4 [r2 / r3 <= r1 / r4].
+    r1 <= r2 <= 0. /\ r3 <= r4 < 0.
+    -> r2 / r3 <= r1 / r4
+
+  (*lemma div_down_positive_finite: forall x y [div_down x y].
+    is_positive (div_down x y) /\ t'isFinite (div_down x y) /\ 
+    not is_zero (div_down x y) -> 
+      0. < t'real x / t'real y /\ 
+      round RTN (t'real zeroF) < round RTN (t'real x / t'real y)
+
+  lemma div_up_negative_finite: forall x y [div_up x y].
+    is_negative (div_up x y) /\ t'isFinite (div_up x y) /\ 
+    not is_zero (div_up x y) -> 
+      0. > t'real x / t'real y /\ 
+      round RTP (t'real zeroF) > round RTP (t'real x / t'real y)
+  *)
+
+  lemma div_round_zero: 
+    round RTN 0. = 0.
+
+  lemma div_positive: forall x y.
+    t'isFinite x -> t'real x >= 0. -> t'isFinite y -> t'real y > 0. -> 
+      (*t'real x / t'real y >= 0. ->*)
+      round RTN (t'real x / t'real y) >= (*round RTN 0*) 0.
+
+  lemma div_negative: forall x y.
+    t'isFinite x -> t'real x <= 0. -> t'isFinite y -> t'real y < 0. -> 
+      (*t'real x / t'real y >= 0. ->*)
+      round RTN (t'real x / t'real y) >= (*round RTN 0*) 0.
+
+  lemma div_fin_ninf: forall xx yy.
+    t'isFinite xx -> t'isFinite yy -> not is_zero yy -> is_minus_infinity (div RTN xx yy) ->
+    round RTN (t'real xx / t'real yy) < (- max_real)
+
+  lemma div_ninf_cond: forall xx yy.
+    is_minus_infinity (div RTN xx yy) ->
+    (is_minus_infinity xx /\ t'isFinite yy /\ t'real yy >= 0.) \/
+    (is_plus_infinity xx  /\ t'isFinite yy /\ t'real yy <= 0.) \/
+    ( t'isFinite xx /\ t'isFinite yy /\ not is_zero yy /\
+      round RTN (t'real xx / t'real yy) < (- max_real) ) \/
+    (t'isFinite xx /\ is_zero yy /\ not is_zero xx)
+
+  lemma div_fin_pinf: forall xx yy.
+    t'isFinite xx -> t'isFinite yy -> not is_zero yy -> is_plus_infinity (div RTN xx yy) ->
+    round RTP (t'real xx / t'real yy) > max_real
+
+  lemma div_pinf_cond: forall xx yy.
+    is_plus_infinity (div RTP xx yy) ->
+    (is_minus_infinity xx /\ t'isFinite yy /\ t'real yy <= 0.) \/
+    (is_plus_infinity xx  /\ t'isFinite yy /\ t'real yy >= 0.) \/
+    ( t'isFinite xx /\ t'isFinite yy /\ not is_zero yy /\
+      round RTP (t'real xx / t'real yy) > max_real ) \/
+    (t'isFinite xx /\ is_zero yy /\ not is_zero xx)
+
+(*
+       (is_nan x \/ is_nan y -> is_nan r)
+    /\ (is_infinite x /\ is_infinite y -> is_nan r)
+    /\ (is_zero x /\ is_zero y -> is_nan r)
+*)
+
+  lemma div_nan_cond: forall xx yy.
+    is_nan (div RNE xx yy) ->
+    (is_nan xx \/ is_nan yy) \/ 
+    (is_infinite xx /\ is_infinite yy) \/
+    (is_zero xx /\ is_zero yy)
+
+  let op (x y : t) : t
+    requires { ordered x /\ ordered y }
+    requires { - large_real <= x.l /\ x.u <= large_real }
+    requires { - large_real <= y.l /\ y.u <= large_real }
+
+    ensures { ordered result }
+
+    (*ensures { forall xx. forall yy.
+      (t'isFinite xx /\ x.l <= t'real xx /\ t'real xx <= x.u) /\
+      (t'isFinite yy -> y.l <= t'real yy /\ t'real yy <= y.u) /\
+      (is_plus_infinity yy -> is_pinf_s y) /\ (is_minus_infinity yy -> is_ninf_s y) ->
+      not is_zero yy -> no_overflow RTN (t'real xx / t'real yy) ->
+      t'isFinite (div RTN xx yy) -> result.l <= t'real (div RTN xx yy) }
+      *)
+
+    ensures { forall xx. forall yy.
+      (t'isFinite xx /\ x.l <= t'real xx /\ t'real xx <= x.u) ->
+      (t'isFinite yy /\ y.l <= t'real yy /\ t'real yy <= y.u) ->
+      not is_zero yy -> no_overflow RTN (t'real xx / t'real yy) ->
+      t'isFinite (div RTN xx yy) -> result.l <= t'real (div RTN xx yy) }
+
+    ensures { forall xx. forall yy.
+      (t'isFinite xx /\ x.l <= t'real xx /\ t'real xx <= x.u) ->
+      (t'isFinite yy /\ y.l <= t'real yy /\ t'real yy <= y.u) ->
+      not is_zero yy -> no_overflow RTP (t'real xx / t'real yy) ->
+      t'isFinite (div RTP xx yy) -> t'real (div RTP xx yy) <= result.u }
+
+    ensures { forall xx. forall yy.
+      (t'isFinite xx /\ x.l <= t'real xx /\ t'real xx <= x.u) ->
+      (t'isFinite yy /\ y.l <= t'real yy /\ t'real yy <= y.u) ->
+      is_minus_infinity (div RTN xx yy) -> result.l = (- large_real) }
+
+    ensures { forall xx. forall yy.
+      (t'isFinite xx -> x.l <= t'real xx /\ t'real xx <= x.u) ->
+      (t'isFinite yy -> y.l <= t'real yy /\ t'real yy <= y.u) ->
+      (is_plus_infinity xx -> is_pinf_s x) -> (is_minus_infinity xx -> is_ninf_s x) -> 
+      (is_plus_infinity yy -> is_pinf_s y) -> (is_minus_infinity yy -> is_ninf_s y) ->
+      is_minus_infinity (div RTN xx yy) -> result.l = (- large_real) }
+
+    ensures { forall xx. forall yy.
+      (t'isFinite xx /\ x.l <= t'real xx /\ t'real xx <= x.u) ->
+      (t'isFinite yy /\ y.l <= t'real yy /\ t'real yy <= y.u) ->
+      is_plus_infinity (div RTP xx yy) -> result.u = large_real }
+
+    ensures { forall xx. forall yy.
+      (t'isFinite xx -> x.l <= t'real xx /\ t'real xx <= x.u) ->
+      (t'isFinite yy -> y.l <= t'real yy /\ t'real yy <= y.u) ->
+      (is_plus_infinity xx -> is_pinf_s x) -> (is_minus_infinity xx -> is_ninf_s x) -> 
+      (is_plus_infinity yy -> is_pinf_s y) -> (is_minus_infinity yy -> is_ninf_s y) ->
+      is_plus_infinity (div RTP xx yy) -> result.u = large_real } 
+
+    ensures { forall xx. forall yy.
+      (is_nan xx -> x.p_nan) -> (is_nan yy -> x.p_nan) -> 
+      (is_zero xx -> x.l <= 0. /\ 0. <= x.u) ->
+      (is_zero yy -> y.l <= 0. /\ 0. <= y.u) ->
+      (is_plus_infinity xx -> is_pinf x) -> (is_minus_infinity xx -> is_ninf x) -> 
+      (is_plus_infinity yy -> is_pinf y) -> (is_minus_infinity yy -> is_ninf y) ->
+      is_nan (div RNE xx yy) -> result.p_nan }
+
+    ensures { forall xx. forall yy. fp_in_ri xx x -> fp_in_ri yy y ->
+      (is_zero xx -> x.l <= 0. /\ 0. <= x.u) ->
+      (is_zero yy -> y.l <= 0. /\ 0. <= y.u) ->
+
+      ( no_overflow RTN (t'real xx / t'real yy) ->
+        t'isFinite (div RTN xx yy) -> result.l <= t'real (div RTN xx yy) ) /\ 
+      ( no_overflow RTP (t'real xx / t'real yy) ->
+        t'isFinite (div RTP xx yy) -> t'real (div RTP xx yy) <= result.u ) /\
+      (is_minus_infinity (div RTN xx yy) -> result.l <= (- large_real)) /\
+      (is_plus_infinity (div RTP xx yy) -> result.u >= large_real) /\
+      (is_nan (div RNE xx yy) -> result.p_nan)
+    }
+
+  = if y.l > 0. then
+      if x.l >= 0. then
+        if not is_pinf y then
+          (* 0 <= [x] and 0 < [y] < +inf *)
+          let l_ = if is_ninf x then - large_real else r_dn (x.l / y.u) in
+          let u_ = if is_pinf x then large_real else r_up (x.u / y.l) in
+          { l = l_; u = u_; p_nan = x.p_nan || y.p_nan }
+        else
+          (* 0 <= [x] and 0 < [y] = +inf *)
+          let l_ = if is_ninf x then - large_real else (*r_dn (x.l / y.u)*) 0. in
+          let u_ = if is_pinf x then large_real else r_up (x.u / y.l) in
+          assert { x.l >= 0. /\ y.l > 0. };
+          assert { is_pinf y };
+          assert { l_ <= round RTN (x.l / y.u) };
+          assert { u_ >= round RTP (x.u / y.l) };
+          (*assert { forall m. round m (x.l / y.u) < (- max_real) -> l_ = - large_real };*)
+          assert { forall m. round m (x.u / y.l) > max_real -> u_ = large_real };
+          { l = l_; u = u_; p_nan = x.p_nan || y.p_nan || is_pinf x }
+
+      else if x.u <= 0. then
+        if not is_pinf y then
+          (* [x] <= 0 and 0 < [y] < +inf *)
+          { l = r_dn (x.l / y.l); u = r_up (x.u / y.u); p_nan = x.p_nan || y.p_nan }
+        else
+          (* [x] <= 0 and 0 < [y] = +inf *)
+          { l = r_dn (x.l / y.l); u = 0.; p_nan = x.p_nan || y.p_nan || is_ninf x }
+
+      else begin
+        assert { x.l < 0. /\ 0. < x.u /\ 0. < y.l };
+        (* [x] strictly contains 0 and 0 < [y] *)
+        let l_ = if is_ninf x then - large_real else r_dn (x.l / y.l) in
+        let u_ = if is_pinf x then large_real else r_up (x.u / y.l) in
+          (*assert { l_ <= u_ };
+          (*assert { l_ < 0. /\ 0. < u_ };*)
+          assert { forall m. l_ <= round m (x.l / y.l) };
+          (*assert { l_ <= round RTN (x.l / y.l) };*)
+          assert { forall m. u_ >= round m (x.u / y.l) };
+          (*assert { u_ >= round RTP (x.u / y.l) };*)
+          assert { forall m. round m (x.l / y.l) < (- max_real) -> l_ = - large_real };
+          assert { forall m. round m (x.u / y.l) > max_real -> u_ = large_real };
+          (*assert { round RTN (x.l / y.l) < (- max_real) -> l_ = - large_real };
+          assert { round RTP (x.u / y.l) > max_real -> u_ = large_real };*)
+
+          assert { forall xx yy. x.l <= xx -> xx <= x.u -> y.l <= yy -> yy <= y.u ->
+                   l_ <= round RTN (xx / yy) };
+          *)
+
+          assert { forall xx yy. x.l <= xx -> xx <= x.u -> y.l <= yy -> yy <= y.u ->
+                   l_ <= round RTN (xx / yy) };
+          assert { forall xx yy. x.l <= xx -> xx <= x.u -> y.l <= yy -> yy <= y.u ->
+                   round RTN (xx / yy) < (- max_real) -> l_ = - large_real };
+          assert { forall xx yy. x.l <= xx -> xx <= x.u -> y.l <= yy -> yy <= y.u ->
+                   u_ >= round RTP (xx / yy) };
+          assert { forall xx yy. x.l <= xx -> xx <= x.u -> y.l <= yy -> yy <= y.u ->
+                   round RTP (xx / yy) > max_real -> u_ = large_real };
+
+          { l = l_; u = u_; 
+            p_nan = x.p_nan || y.p_nan || (is_inf x && is_pinf y) }
+      end
+
+    else if y.u < 0. then
+      if x.l >= 0. then
+        if not is_ninf y then
+          (* 0 <= [x] and -inf < [y] < 0 *)
+          { l = r_dn (x.u / y.u); u = r_up (x.l / y.l); p_nan = x.p_nan || y.p_nan }
+        else 
+          (* 0 <= [x] and -inf = [y] < 0 *)
+          { l = r_dn (x.u / y.u); u = 0.; p_nan = x.p_nan || y.p_nan || is_pinf x }
+
+      else if x.u <= 0. then
+        if not is_ninf y then
+          (* [x] <= 0 and -inf < [y] < 0 *)
+          { l = r_dn (x.u / y.l); u = r_up (x.l / y.u); p_nan = x.p_nan || y.p_nan }
+        else
+          (* [x] <= 0 and -inf = [y] < 0 *)
+          let u_ = if is_pinf x then large_real else r_up (x.l / y.u) in
+          assert { u_ >= round RTP (x.l / y.u) };
+          assert { forall m. round m (x.l / y.u) > max_real -> u_ = large_real };
+          { l = 0.; u = u_; p_nan = x.p_nan || y.p_nan || is_ninf x }
+
+      else begin
+        assert { x.l < 0. /\ 0. < x.u /\ y.u < 0. };
+        (* [x] strictly contains 0 and [y] < 0 *)
+        let l_ = if is_pinf x then - large_real else r_dn (x.u / y.u) in
+        let u_ = if is_ninf x then large_real else r_up (x.l / y.u) in
+        (*assert { l_ <= u_ };
+        assert { l_ < 0. /\ 0. < u_ };
+        (*assert { forall m. l_ <= round m (x.u / y.u) };
+        assert { forall m. u_ >= round m (x.l / y.u) };*)
+        assert { l_ <= round RTN (x.u / y.u) };
+        assert { u_ >= round RTP (x.l / y.u) };
+        (*assert { forall m. round m (x.u / y.u) < (- max_real) -> l_ = - large_real };
+        assert { forall m. round m (x.l / y.u) > max_real -> u_ = large_real };*)
+        assert { round RTN (x.u / y.u) < (- max_real) -> l_ = - large_real };
+        assert { round RTP (x.l / y.u) > max_real -> u_ = large_real };
+        *)
+
+        (*assert { forall xx yy. x.l <= xx -> xx <= x.u -> y.l <= yy -> yy <= y.u ->
+                 x.u / y.u <= xx / yy };*)
+        (*assert { l_ >= - large_real };
+        assert { forall xx yy. x.l <= xx -> xx <= x.u -> y.l <= yy -> yy <= y.u ->
+                 xx / yy <= x.l / y.u };
+        assert { u_ >= x.l / y.u };
+        *)
+
+        assert { forall xx yy. x.l <= xx -> xx <= x.u -> y.l <= yy -> yy <= y.u ->
+                 l_ <= round RTN (xx / yy) };
+        assert { forall xx yy. x.l <= xx -> xx <= x.u -> y.l <= yy -> yy <= y.u ->
+                 round RTN (xx / yy) < (- max_real) -> l_ = - large_real };
+        assert { forall xx yy. x.l <= xx -> xx <= x.u -> y.l <= yy -> yy <= y.u ->
+                 u_ >= round RTP (xx / yy) };
+        assert { forall xx yy. x.l <= xx -> xx <= x.u -> y.l <= yy -> yy <= y.u ->
+                 round RTP (xx / yy) > max_real -> u_ = large_real };
+
+        { l = l_; u = u_; p_nan = x.p_nan || y.p_nan || (is_inf x && is_ninf y) }
+      end
+
+    else
+      (* [y] contains 0; results in Entire *)
+      { l = - large_real; u = large_real;
+        p_nan = x.p_nan || y.p_nan || (is_inf x && is_inf y) || (x.l <= 0. && 0. <= x.u) }
+
+end
+
 
 module Comparison
   use real.Real
