@@ -317,8 +317,8 @@ module Multiplication
         if y.l >= 0. then
           if y.u = 0. then
             (* 0 <= [x] and [x] != [0] and [y] = [0] *)
-            if not is_pinf x then
-              if not x.p_nan && not y.p_nan then zeroI else zero_nan
+            if not is_pinf x && not x.p_nan && not y.p_nan then
+              zeroI 
             else 
               zero_nan
           else begin
@@ -378,8 +378,8 @@ module Multiplication
         if y.l >= 0. then
           if not is_pinf y && y.u = 0. then
             (* [x] <= 0 and [x] != [0] and [y] = [0] *)
-            if not is_ninf x then
-              if not x.p_nan && not y.p_nan then zeroI else zero_nan
+            if not is_ninf x && not x.p_nan && not y.p_nan then
+              zeroI 
             else
               zero_nan
           else begin
@@ -435,8 +435,8 @@ module Multiplication
       if y.l >= 0. then
         if y.u = 0. then
           (* [x] strictly contains 0 and [y] = [0] *)
-          if not is_ninf x && not is_pinf x then
-            if not x.p_nan && not y.p_nan then zeroI else zero_nan
+          if not is_ninf x && not is_pinf x && not x.p_nan && not y.p_nan then
+            zeroI 
           else 
             zero_nan
         else
@@ -669,32 +669,21 @@ module Division
 
   = if y.l > 0. then
       if x.l >= 0. then
-        if not is_pinf y then
-          (* 0 <= [x] and 0 < [y] < +inf *)
-          let l_ = if is_ninf x then - large_real else r_dn (x.l / y.u) in
-          let u_ = if is_pinf x then large_real else r_up (x.u / y.l) in
-          { l = l_; u = u_; p_nan = x.p_nan || y.p_nan }
-        else
-          (* 0 <= [x] and 0 < [y] = +inf *)
-          let l_ = if is_ninf x then - large_real else (*r_dn (x.l / y.u)*) 0. in
-          let u_ = if is_pinf x then large_real else r_up (x.u / y.l) in
-          assert { x.l >= 0. /\ y.l > 0. };
-          assert { is_pinf y };
-          assert { l_ <= round RTN (x.l / y.u) };
-          assert { u_ >= round RTP (x.u / y.l) };
-          (*assert { forall m. round m (x.l / y.u) < (- max_real) -> l_ = - large_real };*)
-          assert { forall m. round m (x.u / y.l) > max_real -> u_ = large_real };
-          { l = l_; u = u_; p_nan = x.p_nan || y.p_nan || is_pinf x }
+        (* 0 <= [x] and 0 < [y] < +inf *)
+        let l_ = if is_pinf y then 0. else r_dn (x.l / y.u) in
+        let u_ = if is_pinf x then large_real else r_up (x.u / y.l) in
+        assert { x.l >= 0. /\ y.l > 0. };
+        assert { l_ <= round RTN (x.l / y.u) };
+        assert { u_ >= round RTP (x.u / y.l) };
+        (*assert { forall m. round m (x.l / y.u) < (- max_real) -> l_ = - large_real };*)
+        assert { forall m. round m (x.u / y.l) > max_real -> u_ = large_real };
+        { l = l_; u = u_; p_nan = x.p_nan || y.p_nan || (is_pinf x && is_pinf y) }
 
       else if x.u <= 0. then
-        if not is_pinf y then
-          (* [x] <= 0 and 0 < [y] < +inf *)
-          let l_ = if is_ninf x then - large_real else r_dn (x.l / y.l) in
-          { l = l_; u = r_up (x.u / y.u); p_nan = x.p_nan || y.p_nan }
-        else
-          (* [x] <= 0 and 0 < [y] = +inf *)
-          let l_ = if is_ninf x then - large_real else r_dn (x.l / y.l) in
-          { l = l_; u = 0.; p_nan = x.p_nan || y.p_nan || is_ninf x }
+        (* [x] <= 0 and 0 < [y] < +inf *)
+        let l_ = if is_ninf x then - large_real else r_dn (x.l / y.l) in
+        let u_ = if is_pinf y then 0. else r_up (x.u / y.u) in
+        { l = l_; u = u_; p_nan = x.p_nan || y.p_nan || (is_ninf x && is_pinf y) }
 
       else begin
         (* [x] strictly contains 0 and 0 < [y] *)
@@ -716,26 +705,18 @@ module Division
 
     else if y.u < 0. then
       if x.l >= 0. then
-        if not is_ninf y then
-          (* 0 <= [x] and -inf < [y] < 0 *)
-          let l_ = if is_pinf x then - large_real else r_dn (x.u / y.u) in
-          { l = l_; u = r_up (x.l / y.l); p_nan = x.p_nan || y.p_nan }
-        else 
-          (* 0 <= [x] and -inf = [y] < 0 *)
-          let l_ = if is_pinf x then - large_real else r_dn (x.u / y.u) in
-          { l = l_; u = 0.; p_nan = x.p_nan || y.p_nan || is_pinf x }
+        (* 0 <= [x] and -inf < [y] < 0 *)
+        let l_ = if is_pinf x then - large_real else r_dn (x.u / y.u) in
+        let u_ = if is_ninf y then 0. else r_up (x.l / y.l) in
+        { l = l_; u = u_; p_nan = x.p_nan || y.p_nan || (is_pinf x && is_ninf y) }
 
       else if x.u <= 0. then
-        if not is_ninf y then
-          (* [x] <= 0 and -inf < [y] < 0 *)
-          let u_ = if is_ninf x then large_real else r_up (x.l / y.u) in
-          { l = r_dn (x.u / y.l); u = u_; p_nan = x.p_nan || y.p_nan }
-        else
-          (* [x] <= 0 and -inf = [y] < 0 *)
-          let u_ = if is_ninf x then large_real else r_up (x.l / y.u) in
+        (* [x] <= 0 and -inf < [y] < 0 *)
+        let l_ = if is_ninf y then 0. else r_dn (x.u / y.l) in
+        let u_ = if is_ninf x then large_real else r_up (x.l / y.u) in
           assert { u_ >= round RTP (x.l / y.u) };
           assert { forall m. round m (x.l / y.u) > max_real -> u_ = large_real };
-          { l = 0.; u = u_; p_nan = x.p_nan || y.p_nan || is_ninf x }
+          { l = l_; u = u_; p_nan = x.p_nan || y.p_nan || (is_ninf x && is_ninf y) }
 
       else begin
         assert { x.l < 0. /\ 0. < x.u /\ y.u < 0. };
