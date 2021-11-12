@@ -44,14 +44,14 @@ module RealInterval
   let function r_dn (v:real)
     ensures { result <= round RTN v }
     ensures { forall m. result <= round m v }
-    ensures { forall m. (round m v) < (- max_real) -> result = (- large_real) }
+    ensures { forall m. ((round m v) < (- max_real) -> result = (- large_real)) }
   = let w = v - ((if v >= 0. then v else -v) / err_denom) - err_min in
     if w >= -max_real then w else -large_real
 
   let function r_up (v:real)
     ensures { result >= round RTP v }
     ensures { forall m. result >= round m v }
-    ensures { forall m. (round m v) > max_real -> result = large_real }
+    ensures { forall m. ((round m v) > max_real -> result = large_real) }
   = let w = v + ((if v >= 0. then v else -v) / err_denom) + err_min in
     if w <= max_real then w else large_real
 
@@ -68,13 +68,24 @@ module Addition
   use ieee_float.Float64
   use RealInterval
 
+  (*lemma add_lb: forall xx yy.
+    t'isFinite xx -> t'isFinite yy ->
+    (*t'real yy = 0. -> t'real yy >= 0. ->*)
+    t'real xx <= 1. -> t'real xx >= 0. ->
+    t'real (add RTN xx yy) <= t'real (add RTP xx yy)
+    *)
+
+  (*lemma round_lb: forall x m.
+    (*no_overflow (round RTN x) -> no_overflow (round RTP x) ->*)
+    in_range x ->
+    round RTN x <= round m x
+  *)
+
   let op (x y : t) : t
     requires { ordered x /\ ordered y }
     ensures { ordered result }
 
     (*ensures { forall xx. forall yy. 
-      (*(t'isFinite xx /\ x.l <= t'real xx /\ t'real xx <= x.u) ->
-      (t'isFinite yy /\ y.l <= t'real yy /\ t'real yy <= y.u) ->*)
       (x.l <= t'real xx /\ t'real xx <= x.u) ->
       (y.l <= t'real yy /\ t'real yy <= y.u) ->
       result.l <= (t'real xx) + (t'real yy) /\ (t'real xx) + (t'real yy) <= result.u }
@@ -107,25 +118,42 @@ module Addition
       is_nan (xx .+ yy) -> result.p_nan }
     *)
 
-    ensures { forall xx. forall yy. fp_in_ri xx x -> fp_in_ri yy y ->
+    ensures { forall xx yy. fp_in_ri xx x -> fp_in_ri yy y ->
       fp_in_ri (xx .+ yy) result }
 
-  = let l = r_dn (x.l + y.l) in
-    let u = r_up (x.u + y.u) in
+    ensures { forall xx yy m. fp_in_ri xx x -> fp_in_ri yy y ->
+      ( t'isFinite (add RTN xx yy) -> no_overflow RTN (t'real xx + t'real yy) ->
+          result.l <= t'real (add RTN xx yy) ) /\ 
+      (t'isFinite (add RTP xx yy) -> no_overflow RTP (t'real xx + t'real yy) ->
+          result.u >= t'real (add RTP xx yy)) /\ 
+      (is_minus_infinity (add m xx yy) -> result.l <= (- large_real)) /\
+      (is_plus_infinity (add m xx yy) -> result.u >= large_real) /\
+      (is_nan (add m xx yy) -> result.p_nan) }
+
+    (* Note that some NaN cases are treated inaccurately. 
+       E.g. [-inf,x] + [inf,inf] becomes {l=0.; u=inf; p_nan=true}), 
+            which should be interval {NaN}, but we leave it as is. *)
+
+  = let l_ = r_dn (x.l + y.l) in
+    let u_ = r_up (x.u + y.u) in
     let p_nan = x.p_nan || y.p_nan || 
       (is_ninf x && is_pinf y) || (is_pinf x && is_ninf y) in
-    assert { l <= u };
-    (*assert { l <= round RTN (x.l + y.l) };
-    assert { u >= round RTP (x.u + y.u) };*)
-    assert { l <= round RNE (x.l + y.l) };
-    assert { u >= round RNE (x.u + y.u) };
-    (*assert { forall m. l <= round m (x.l + y.l) };
-    assert { forall m. u >= round m (x.u + y.u) };*)
-    (*assert { forall m. (round m (x.l + y.l)) < (- max_real) -> l < (- max_real) };
-    assert { forall m. (round m (x.u + y.u)) > max_real -> u > max_real };*)
-    assert { forall m. (round m (x.l + y.l)) < (- max_real) -> l = (- large_real) };
-    assert { forall m. (round m (x.u + y.u)) > max_real -> u = large_real };
-    { l = l; u = u; p_nan = p_nan }
+    assert { l_ <= u_ };
+    (*assert { forall m. l_ <= round m (x.l + y.l) };
+    assert { forall m. u_ >= round m (x.u + y.u) };*)
+    (*assert { l_ <= round RTN (x.l + y.l) };
+    assert { u_ >= round RTP (x.u + y.u) };*)
+    assert { l_ <= round RNE (x.l + y.l) };
+    assert { u_ >= round RNE (x.u + y.u) };
+    assert { forall m. (round m (x.l + y.l)) < (- max_real) -> l_ = (- large_real) };
+    assert { forall m. (round m (x.u + y.u)) > max_real -> u_ = large_real };
+    (*assert { round RTN (x.l + y.l) < (- max_real) -> l_ = (- large_real) };
+    assert { round RTP (x.u + y.u) > max_real -> u_ = large_real };*)
+
+    (*assert { forall xx yy. x.l <= xx -> xx <= x.u -> y.l <= yy -> yy <= y.u -> l_ <= round RTN (xx + yy) };
+    assert { forall xx yy. x.l <= xx -> xx <= x.u -> y.l <= yy -> yy <= y.u -> u_ >= round RTP (xx + yy) };*)
+
+    { l = l_; u = u_; p_nan = p_nan }
 
 end
 
@@ -134,7 +162,7 @@ module Subtraction
   use ieee_float.Float64
   use RealInterval
 
-  let op (x:t) (y:t)
+  let op (x y : t)
     requires { ordered x /\ ordered y }
     ensures { ordered result }
 
@@ -175,6 +203,19 @@ module Subtraction
       fp_in_ri (xx .- yy) result
     }
 
+    ensures { forall xx yy m. fp_in_ri xx x -> fp_in_ri yy y ->
+      ( t'isFinite (add RTN xx yy) -> no_overflow RTN (t'real xx - t'real yy) ->
+          result.l <= t'real (sub RTN xx yy) ) /\ 
+      (t'isFinite (add RTP xx yy) -> no_overflow RTP (t'real xx - t'real yy) ->
+          result.u >= t'real (sub RTP xx yy)) /\ 
+      (is_minus_infinity (sub m xx yy) -> result.l <= (- large_real)) /\
+      (is_plus_infinity (sub m xx yy) -> result.u >= large_real) /\
+      (is_nan (sub m xx yy) -> result.p_nan) }
+
+    (* Note that some NaN cases are treated inaccurately. 
+       E.g. [-inf,x] - [inf,inf] becomes {l=0.; u=-inf; p_nan=true}), 
+            which should be interval {NaN}, but we leave it as is. *)
+
   = let l_ = r_dn (x.l - y.u) in
     let u = r_up (x.u - y.l) in
     let p_nan = x.p_nan || y.p_nan || 
@@ -184,6 +225,43 @@ module Subtraction
     assert { u >= round RNE (x.u - y.l) };
     assert { forall m. (round m (x.l - y.u)) < (- max_real) -> l_ = (- large_real) };
     assert { forall m. (round m (x.u - y.l)) > max_real -> u = large_real };
+    { l = l_; u = u; p_nan = p_nan }
+
+
+  let function sub_exact (x y : t) : t
+    requires { ordered x /\ ordered y }
+    ensures { ordered result }
+
+    ensures { forall xx yy. 
+      x.l <= xx -> xx <= x.u -> y.l <= yy -> yy <= y.u ->
+      (result.l <= xx - yy /\ xx - yy <= result.u) /\
+      (*(is_ninf_ (xx - yy) -> result.l <= - large_real) /\
+      (is_pinf_ (xx - yy) -> result.u >= large_real) /\*)
+      ((x.p_nan \/ y.p_nan) -> result.p_nan) /\
+      ((is_ninf_ xx /\ is_ninf_ yy) -> result.p_nan) /\
+      ((is_pinf_ xx /\ is_pinf_ yy) -> result.p_nan) 
+    }
+
+    (*ensures { forall xx. forall yy. fp_in_ri xx x -> fp_in_ri yy y ->
+      (*(t'isFinite xx -> x.l <= t'real xx /\ t'real xx <= x.u) /\*)
+      (result.l <= t'real xx - t'real yy <= result.u) /\
+      ((is_minus_infinity xx \/ is_plus_infinity yy) -> result.l <= (- large_real)) /\
+      ((is_plus_infinity xx \/ is_minus_infinity yy) -> result.u >= large_real) /\
+      ((is_nan xx \/ is_nan yy) -> result.p_nan) /\
+      ((is_minus_infinity xx \/ is_minus_infinity yy) -> result.p_nan) /\
+      ((is_plus_infinity xx \/ is_plus_infinity yy) -> result.p_nan) 
+    }
+    *)
+
+  = let l_ = x.l - y.u in
+    let u = x.u - y.l in
+    let p_nan = x.p_nan || y.p_nan || 
+      (is_ninf x && is_ninf y) || (is_pinf x && is_pinf y) in
+    (*assert { l_ <= u };
+    assert { l_ <= round RNE (x.l - y.u) };
+    assert { u >= round RNE (x.u - y.l) };
+    assert { forall m. (round m (x.l - y.u)) < (- max_real) -> l_ = (- large_real) };
+    assert { forall m. (round m (x.u - y.l)) > max_real -> u = large_real };*)
     { l = l_; u = u; p_nan = p_nan }
 
 end
@@ -680,7 +758,7 @@ module Division
         { l = l_; u = u_; p_nan = x.p_nan || y.p_nan || (is_pinf x && is_pinf y) }
 
       else if x.u <= 0. then
-        (* [x] <= 0 and 0 < [y] < +inf *)
+        (* [x] <= 0 and 0 < [y] *)
         let l_ = if is_ninf x then - large_real else r_dn (x.l / y.l) in
         let u_ = if is_pinf y then 0. else r_up (x.u / y.u) in
         { l = l_; u = u_; p_nan = x.p_nan || y.p_nan || (is_ninf x && is_pinf y) }
@@ -747,20 +825,45 @@ module Comparison
   use real.Real
   use ieee_float.Float64
   use RealInterval
+  use Subtraction
 
   (* Weak operators. *)
 
   predicate gt0_n (f:t)
-  = is_pinf_s f \/ f.u > 0.
+  = is_pinf f \/ f.u > 0.
 
   predicate geq0_n (f:t)
-  = is_pinf_s f \/ f.u >= 0.
+  = is_pinf f \/ f.u >= 0.
+
+  predicate gt_n (f g : t)
+  = is_pinf f \/ is_ninf g \/ gt0_n (sub_exact f g)
+
+  predicate geq_n (f g : t)
+  = is_pinf f \/ is_ninf g \/ geq0_n (sub_exact f g)
+
+  predicate fpeq_n (f g:t)
+  = geq_n f g /\ geq_n g f
+
+  predicate eq_n (f g:t)
+  = (f.p_nan /\ g.p_nan) \/ fpeq_n f g
 
   predicate lt0_n (f:t)
   = f.p_nan \/ is_ninf f \/ f.l < 0.
 
   predicate leq0_n (f:t)
   = f.p_nan \/ is_ninf f \/ f.l <= 0.
+
+  predicate lt_n (f g : t)
+  = f.p_nan \/ g.p_nan (*\/ is_ninf f \/ is_pinf g*) \/ lt0_n (sub_exact f g)
+
+  predicate leq_n (f g : t)
+  = f.p_nan \/ g.p_nan (*\/ is_ninf f \/ is_pinf g*) \/ leq0_n (sub_exact f g)
+
+  predicate fpneq_n (f g:t)
+  = lt_n f g \/ lt_n g f
+
+  predicate neq_n (f g:t)
+  = fpneq_n f g
 
   (* Strong operators. *)
 
@@ -770,11 +873,56 @@ module Comparison
   predicate geq0_p (f:t)
   = not f.p_nan /\ not (is_ninf f) /\ f.l >= 0.
 
+  predicate gt_p (f g : t)
+  = not f.p_nan /\ not g.p_nan (*/\ not (is_ninf f) /\ not (is_pinf g)*) /\ 
+    gt0_p (sub_exact f g)
+
+  predicate geq_p (f g : t)
+  = not f.p_nan /\ not g.p_nan (*/\ not (is_ninf f) /\ not (is_pinf f)*) /\ 
+    geq0_p (sub_exact f g)
+
+  predicate fpeq_p (f g : t)
+  = not f.p_nan /\ not g.p_nan /\ f.l = f.u /\ f.u = g.l /\ g.l = g.u
+
+  predicate eq_p (f g : t)
+  = fpeq_p f g
+
   predicate lt0_p (f:t)
   = not (is_pinf f) /\ f.u < 0.
 
   predicate leq0_p (f:t)
   = not (is_pinf f) /\ f.u <= 0.
+
+  predicate lt_p (f g : t)
+  = not (is_pinf f) /\ not (is_ninf g) /\ lt0_p (sub_exact f g)
+
+  predicate leq_p (f g : t)
+  = not (is_pinf f) /\ not (is_ninf g) /\ leq0_p (sub_exact f g)
+
+  predicate fpneq_p (f g : t)
+  = lt_p f g \/ lt_p g f
+
+  predicate neq_p (f g : t)
+  = (not f.p_nan \/ not g.p_nan) /\ fpneq_p f g
+
+  (* Auxiliary lemmas. *)
+
+  function ext (v:Float64.t) : t
+  = if (t'isFinite v) then { l = t'real v; u = t'real v; p_nan = false }
+    else if v .<  zeroF then { l = (- large_real); u = (- large_real); p_nan = false }
+    else if v .>= zeroF then { l = large_real;     u = large_real;     p_nan = false }
+    else { l = 0.; u = 0.; p_nan = true }
+
+  lemma fp_ext:
+    forall ff. fp_in_ri ff (ext ff) /\ ordered (ext ff)
+
+  (* Proof w/ Coq: intros ff. exists (ext f). apply fp_ext. Qed. *)
+  lemma fp_ri_exists:
+    forall ff. exists f. fp_in_ri ff f /\ ordered f
+
+  (*lemma gt0_n_unsat_: forall f. ordered f -> 
+    not (gt0_n f) ->
+    forall ff. fp_in_ri ff f -> not (ff .> zeroF)*)
 
   (* Logical equivalence. *)
 
@@ -792,19 +940,188 @@ module Comparison
 
   (* Correctness. *)
 
-  lemma gt0_n_complete: forall f. ordered f -> not gt0_n f ->
-    forall ff. fp_in_ri ff f -> not (ff .> zeroF)
+  (* [Weak operator (explicit form)]
+   * First, prove a slightly lengthy lemma w/ Alt-Ergo. 
+   *)
+  lemma gt0_n_unsat0: 
+    (forall f0. ordered f0 -> not (gt0_n f0)) ->
+    forall ff. (exists f. fp_in_ri ff f /\ ordered f) ->
+    not (ff .> zeroF)
 
-  lemma leq0_n_complete: forall f. ordered f -> not leq0_n f ->
-    forall ff. fp_in_ri ff f -> (*not (not (ff .> zeroF))*) ff .> zeroF
+  (* Then, a shorter lemma can be proved w/ Coq.
+   * Proof. intros H ff. apply gt0_n_unsat0. apply H. apply fp_ri_exists. Qed. 
+   * In the following, we only describe the lengthy lemmas 
+   * for other weak operators. 
+   *)
+  lemma gt0_n_unsat: 
+    (forall f. ordered f -> not (gt0_n f)) ->
+    forall ff. not (ff .> zeroF)
 
-  lemma geq0_p_sound: forall f. ordered f -> geq0_p f -> 
-    forall ff. fp_in_ri ff f -> ff .>= zeroF
+  lemma geq0_n_unsat0: 
+    (forall f0. ordered f0 -> not (geq0_n f0)) ->
+    forall ff. (exists f. fp_in_ri ff f /\ ordered f) ->
+    not (ff .>= zeroF)
 
-  lemma gt0_p_sound: forall f. ordered f -> gt0_p f -> 
-    forall ff. fp_in_ri ff f -> ff .> zeroF
+  (*
+  lemma gt_n_unsat: forall f g. ordered f -> ordered g -> not gt_n f g ->
+    forall ff gg. fp_in_ri ff f -> fp_in_ri gg g -> not (ff .> gg)
 
-  lemma leq0_p_sound: forall f. ordered f -> leq0_p f -> 
-    forall ff. fp_in_ri ff f -> not (ff .> zeroF)
+  lemma gt_n_unsat0_: 
+    (forall f0 g0. ordered f0 -> ordered g0 -> not (gt_n f0 g0)) ->
+    forall ff gg. forall f g.
+    (fp_in_ri ff f /\ ordered f /\ fp_in_ri gg g /\ ordered g) ->
+    not (gt_n f g)
+
+  lemma gt_n_unsat1_: 
+    (forall f0 g0. ordered f0 -> ordered g0 -> not (gt_n f0 g0)) ->
+    forall ff gg. 
+    (exists f g. fp_in_ri ff f /\ fp_in_ri gg g /\ ordered f /\ ordered g /\ not (gt_n f g)) ->
+    not (ff .> gg)
+  *)
+
+  (* [Weak operator (implicit form)]
+   *)
+  lemma gt_n_unsat0: 
+    (forall f0 g0. ordered f0 -> ordered g0 -> not (gt_n f0 g0)) ->
+    forall ff gg. 
+    (exists f g. fp_in_ri ff f /\ fp_in_ri gg g /\ not (gt_n f g)) ->
+    not (ff .> gg)
+
+  (* Then, prove a shorter lemma w/ Coq.
+   * Proof. intros h1 ff gg. apply gt_n_unsat0. apply h1.
+   * exists (ext ff). exists (ext gg). split. 
+   * - apply fp_ext.
+   * - split. apply fp_ext. apply h1; apply fp_ext.
+   * Qed.
+   *)
+  lemma gt_n_unsat: 
+    (forall f0 g0. ordered f0 -> ordered g0 -> not (gt_n f0 g0)) ->
+    forall ff gg. not (ff .> gg)
+
+  lemma geq_n_unsat0: 
+    (forall f0 g0. ordered f0 -> ordered g0 -> not (geq_n f0 g0)) ->
+    forall ff gg. 
+    (exists f g. fp_in_ri ff f /\ fp_in_ri gg g /\ not (geq_n f g)) ->
+    not (ff .>= gg)
+
+  lemma fpeq_n_unsat0: 
+    (forall f0 g0. ordered f0 -> ordered g0 -> not (fpeq_n f0 g0)) ->
+    forall ff gg. 
+    (exists f g. fp_in_ri ff f /\ fp_in_ri gg g /\ not (fpeq_n f g)) ->
+    not (ff .= gg)
+
+  lemma eq_n_unsat0: 
+    (forall f0 g0. ordered f0 -> ordered g0 -> not (eq_n f0 g0)) ->
+    forall ff gg. 
+    (exists f g. fp_in_ri ff f /\ fp_in_ri gg g /\ not (eq_n f g)) ->
+    not ((is_nan ff /\ is_nan gg) \/ ff .= gg)
+
+  lemma lt0_n_unsat0: 
+    (forall f0. ordered f0 -> not (lt0_n f0)) ->
+    forall ff. (exists f. fp_in_ri ff f /\ ordered f) ->
+    not (not (ff .>= zeroF))
+
+  lemma leq0_n_unsat0: 
+    (forall f0. ordered f0 -> not (leq0_n f0)) ->
+    forall ff. (exists f. fp_in_ri ff f /\ ordered f) ->
+    not (not (ff .> zeroF))
+
+  lemma lt_n_unsat0: 
+    (forall f0 g0. ordered f0 -> ordered g0 -> not (lt_n f0 g0)) ->
+    forall ff gg. 
+    (exists f g. fp_in_ri ff f /\ fp_in_ri gg g /\ ordered f /\ ordered g /\ not (lt_n f g)) ->
+    not (not (ff .>= gg))
+
+  lemma leq_n_unsat0: 
+    (forall f0 g0. ordered f0 -> ordered g0 -> not (leq_n f0 g0)) ->
+    forall ff gg. 
+    (exists f g. fp_in_ri ff f /\ fp_in_ri gg g /\ ordered f /\ ordered g /\ not (leq_n f g)) ->
+    not (not (ff .> gg))
+
+  lemma fpneq_n_unsat0: 
+    (forall f0 g0. ordered f0 -> ordered g0 -> not (fpneq_n f0 g0)) ->
+    forall ff gg. 
+    (exists f g. fp_in_ri ff f /\ fp_in_ri gg g /\ ordered f /\ ordered g /\ not (fpneq_n f g)) ->
+    not (not (ff .= gg))
+
+  lemma neq_n_unsat0: 
+    (forall f0 g0. ordered f0 -> ordered g0 -> not (neq_n f0 g0)) ->
+    forall ff gg. 
+    (exists f g. fp_in_ri ff f /\ fp_in_ri gg g /\ ordered f /\ ordered g /\ not (neq_n f g)) ->
+    not (not ((is_nan ff /\ is_nan gg) \/ ff .= gg))
+
+
+  (* [Strong operator (explicit form)] 
+   * First, prove a variant lemma w/ Alt-Ergo. 
+   *)
+  lemma gt0_p_sat0: forall f ff. ordered f -> 
+    fp_in_ri ff f -> not (ff .> zeroF) -> not (gt0_p f)
+
+  (*lemma gt0_p_sat2: forall f. ordered f -> 
+    (exists ff. fp_in_ri ff f /\ not (ff .> zeroF)) ->
+    not (gt0_p f)
+    *)
+
+  (* Then, prove the soundness claim w/ Alt-Ergo. 
+   * In the following, we only describe the variant lemmas 
+   * for other strong operators.
+   *)
+  lemma gt0_p_sat: 
+    (forall ff0. not (ff0 .> zeroF)) ->
+    forall f. ordered f -> (exists ff. fp_in_ri ff f) -> not (gt0_p f)
+
+  lemma geq0_p_sat0: forall f ff. ordered f -> 
+    fp_in_ri ff f -> not (ff .>= zeroF) -> not (geq0_p f)
+
+  (* [Strong operator (implicit form)] 
+   * First, prove a variant lemma w/ Alt-Ergo. 
+   *)
+  lemma gt_p_sat0: forall f g. ordered f -> ordered g -> 
+    forall ff gg. fp_in_ri ff f -> fp_in_ri gg g -> 
+    not (ff .> gg) -> not (gt_p f g)
+
+  (* Then, prove the soundness claim w/ Coq. 
+   * Proof. intros. apply gt_p_sat0 with (ff:=ff) (gg:=gg); auto. Qed.
+   *)
+  lemma gt_p_sat: 
+    (forall ff0 gg0. not (ff0 .> gg0)) ->
+    forall f g. ordered f -> ordered g -> 
+    (exists ff gg. fp_in_ri ff f /\ fp_in_ri gg g) -> 
+    not (gt_p f g)
+
+  lemma geq_p_sat0: forall f g. ordered f -> ordered g -> 
+    forall ff gg. fp_in_ri ff f -> fp_in_ri gg g -> 
+    not (ff .>= gg) -> not (geq_p f g)
+
+  lemma fpeq_p_sat0: forall f g. ordered f -> ordered g -> 
+    forall ff gg. fp_in_ri ff f -> fp_in_ri gg g -> 
+    not (ff .= gg) -> not (fpeq_p f g)
+
+  lemma eq_p_sat0: forall f g. ordered f -> ordered g -> 
+    forall ff gg. fp_in_ri ff f -> fp_in_ri gg g -> 
+      not ((is_nan ff /\ is_nan gg) \/ ff .= gg) ->
+      not (eq_p f g)
+
+  lemma lt0_p_sat0: forall f. ordered f -> 
+    forall ff. fp_in_ri ff f -> not (not (ff .>= zeroF)) -> not (lt0_p f)
+
+  lemma leq0_p_sat0: forall f. ordered f -> 
+    forall ff. fp_in_ri ff f -> not (not (ff .> zeroF)) -> not (leq0_p f)
+
+  lemma lt_p_sat0: forall f g. ordered f -> ordered g -> 
+    forall ff gg. fp_in_ri ff f -> fp_in_ri gg g -> 
+    not (not (ff .>= gg)) -> not (lt_p f g)
+
+  lemma leq_p_sat0: forall f g. ordered f -> ordered g -> 
+    forall ff gg. fp_in_ri ff f -> fp_in_ri gg g -> 
+    not (not (ff .> gg)) -> not (leq_p f g)
+
+  lemma fpneq_p_sat0: forall f g. ordered f -> ordered g -> 
+    forall ff gg. fp_in_ri ff f -> fp_in_ri gg g -> 
+    not (not (ff .= gg)) -> not (fpneq_p f g)
+
+  lemma neq_p_sat0: forall f g. ordered f -> ordered g -> 
+    forall ff gg. fp_in_ri ff f -> fp_in_ri gg g -> 
+    not (not ((is_nan ff /\ is_nan gg) \/ ff .= gg)) -> not (neq_p f g)
 
 end
