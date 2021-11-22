@@ -827,7 +827,7 @@ module Comparison
   use RealInterval
   use Subtraction
 
-  (* Negative extensions. *)
+  (* Weak extensions. *)
 
   predicate gt0_n (f:t)
   = is_pinf f \/ f.u > 0.
@@ -865,7 +865,7 @@ module Comparison
   predicate neq_n (f g:t)
   = fpneq_n f g
 
-  (* Positive extensions. *)
+  (* Strong extensions. *)
 
   predicate gt0_p (f:t)
   = not f.p_nan /\ not (is_ninf f) /\ f.l > 0.
@@ -905,6 +905,138 @@ module Comparison
   predicate neq_p (f g : t)
   = (not f.p_nan \/ not g.p_nan) /\ fpneq_p f g
 
+  (* Logical equivalence. *)
+
+  lemma gt_leq: forall f. ordered f ->
+    (gt0_n f <-> not leq0_p f)
+
+  lemma geq_lt: forall f. ordered f ->
+    (geq0_n f <-> not lt0_p f)
+
+  lemma lt_geq: forall f. ordered f -> 
+    (lt0_n f <-> not geq0_p f)
+
+  lemma leq_gt: forall f. ordered f -> 
+    (leq0_n f <-> not gt0_p f)
+
+  (* Implications between literals and its enclosures. *)
+
+  (* [Weak extensions; positive] *)
+
+  lemma gt0_n_imp: 
+    forall ff. ff .> zeroF ->
+    forall f. ordered f -> fp_in_ri ff f -> 
+    gt0_n f
+
+  lemma geq0_n_imp: 
+    forall ff. ff .>= zeroF ->
+    forall f. ordered f -> fp_in_ri ff f -> 
+    geq0_n f
+
+  lemma gt_n_imp: 
+    forall ff gg. ff .> gg ->
+    forall f g. ordered f -> ordered g -> fp_in_ri ff f -> fp_in_ri gg g -> 
+    gt_n f g
+
+  lemma geq_n_imp: 
+    forall ff gg. ff .>= gg ->
+    forall f g. ordered f -> ordered g -> fp_in_ri ff f -> fp_in_ri gg g -> 
+    geq_n f g
+
+  lemma fpeq_n_imp: 
+    forall ff gg. ff .= gg ->
+    forall f g. ordered f -> ordered g -> fp_in_ri ff f -> fp_in_ri gg g -> 
+    fpeq_n f g
+
+  lemma eq_n_imp: 
+    forall ff gg. ((is_nan ff /\ is_nan gg) \/ ff .= gg) ->
+    forall f g. ordered f -> ordered g -> fp_in_ri ff f -> fp_in_ri gg g -> 
+    eq_n f g
+
+  (* [Weak extensions; negative] *)
+
+  lemma lt0_n_imp: 
+    forall ff. not (ff .>= zeroF) ->
+    forall f. ordered f -> fp_in_ri ff f -> 
+    lt0_n f
+
+  lemma leq0_n_imp: 
+    forall ff. not (ff .> zeroF) ->
+    forall f. ordered f -> fp_in_ri ff f -> 
+    leq0_n f
+
+  lemma lt_n_imp: 
+    forall ff gg. not (ff .>= gg) ->
+    forall f g. ordered f -> ordered g -> fp_in_ri ff f -> fp_in_ri gg g -> 
+    lt_n f g
+
+  lemma leq_n_imp: 
+    forall ff gg. not (ff .> gg) ->
+    forall f g. ordered f -> ordered g -> fp_in_ri ff f -> fp_in_ri gg g -> 
+    leq_n f g
+
+  lemma fpneq_n_imp: 
+    forall ff gg. not (ff .= gg) ->
+    forall f g. ordered f -> ordered g -> fp_in_ri ff f -> fp_in_ri gg g -> 
+    fpneq_n f g
+
+  lemma neq_n_imp: 
+    forall ff gg. not ((is_nan ff /\ is_nan gg) \/ ff .= gg) ->
+    forall f g. ordered f -> ordered g -> fp_in_ri ff f -> fp_in_ri gg g -> 
+    neq_n f g
+
+  (* [Strong extensions; positive] *)
+
+  lemma gt0_p_imp: 
+    forall ff f. ordered f -> gt0_p f -> 
+    fp_in_ri ff f -> ff .> zeroF
+
+  lemma geq0_p_imp: 
+    forall ff f. ordered f -> geq0_p f -> 
+    fp_in_ri ff f -> ff .>= zeroF
+
+  lemma gt_p_imp: 
+    forall ff gg f g. ordered f -> ordered g -> gt_p f g -> 
+    fp_in_ri ff f -> fp_in_ri gg g -> ff .> gg
+
+  lemma geq_p_imp: 
+    forall ff gg f g. ordered f -> ordered g -> geq_p f g -> 
+    fp_in_ri ff f -> fp_in_ri gg g -> ff .>= gg
+
+  lemma fpeq_p_imp: 
+    forall ff gg f g. ordered f -> ordered g -> fpeq_p f g -> 
+    fp_in_ri ff f -> fp_in_ri gg g -> ff .= gg
+
+  lemma eq_p_imp: 
+    forall ff gg f g. ordered f -> ordered g -> eq_p f g -> 
+    fp_in_ri ff f -> fp_in_ri gg g -> ((is_nan ff /\ is_nan gg) \/ ff .= gg)
+
+  (* [Strong extensions; negative] *)
+
+  lemma lt0_p_imp: 
+    forall ff f. ordered f -> lt0_p f -> 
+    fp_in_ri ff f -> not (ff .>= zeroF)
+
+  lemma leq0_p_imp: 
+    forall ff f. ordered f -> leq0_p f -> 
+    fp_in_ri ff f -> not (ff .> zeroF)
+
+  lemma lt_p_imp: 
+    forall ff gg f g. ordered f -> ordered g -> lt_p f g -> 
+    fp_in_ri ff f -> fp_in_ri gg g -> not (ff .>= gg)
+
+  lemma leq_p_imp: 
+    forall ff gg f g. ordered f -> ordered g -> leq_p f g -> 
+    fp_in_ri ff f -> fp_in_ri gg g -> not (ff .> gg)
+
+  lemma fpneq_p_imp: 
+    forall ff gg f g. ordered f -> ordered g -> fpneq_p f g -> 
+    fp_in_ri ff f -> fp_in_ri gg g -> not (ff .= gg)
+
+  lemma neq_p_imp: 
+    forall ff gg f g. ordered f -> ordered g -> neq_p f g -> 
+    fp_in_ri ff f -> fp_in_ri gg g -> not ((is_nan ff /\ is_nan gg) \/ ff .= gg)
+
   (* Auxiliary lemmas. *)
 
   function ext (v:Float64.t) : t
@@ -924,25 +1056,12 @@ module Comparison
     not (gt0_n f) ->
     forall ff. fp_in_ri ff f -> not (ff .> zeroF)*)
 
-  (* Logical equivalence. *)
-
-  lemma gt_leq: forall f. ordered f ->
-    (gt0_n f <-> not leq0_p f)
-
-  lemma geq_lt: forall f. ordered f ->
-    (geq0_n f <-> not lt0_p f)
-
-  lemma lt_geq: forall f. ordered f -> 
-    (lt0_n f <-> not geq0_p f)
-
-  lemma leq_gt: forall f. ordered f -> 
-    (leq0_n f <-> not gt0_p f)
-
   (* Correctness. *)
 
-  (* [Negative extension (explicit form)]
+  (* [Weak extension (explicit form)]
    * First, prove a slightly lengthy lemma w/ Alt-Ergo. 
    *)
+
   lemma gt0_n_unsat0: 
     (forall f0. ordered f0 -> not (gt0_n f0)) ->
     forall ff. (exists f. fp_in_ri ff f /\ ordered f) ->
@@ -962,24 +1081,7 @@ module Comparison
     forall ff. (exists f. fp_in_ri ff f /\ ordered f) ->
     not (ff .>= zeroF)
 
-  (*
-  lemma gt_n_unsat: forall f g. ordered f -> ordered g -> not gt_n f g ->
-    forall ff gg. fp_in_ri ff f -> fp_in_ri gg g -> not (ff .> gg)
-
-  lemma gt_n_unsat0_: 
-    (forall f0 g0. ordered f0 -> ordered g0 -> not (gt_n f0 g0)) ->
-    forall ff gg. forall f g.
-    (fp_in_ri ff f /\ ordered f /\ fp_in_ri gg g /\ ordered g) ->
-    not (gt_n f g)
-
-  lemma gt_n_unsat1_: 
-    (forall f0 g0. ordered f0 -> ordered g0 -> not (gt_n f0 g0)) ->
-    forall ff gg. 
-    (exists f g. fp_in_ri ff f /\ fp_in_ri gg g /\ ordered f /\ ordered g /\ not (gt_n f g)) ->
-    not (ff .> gg)
-  *)
-
-  (* [Negative extension (implicit form)]
+  (* [Weak extension (implicit form)]
    *)
   lemma gt_n_unsat0: 
     (forall f0 g0. ordered f0 -> ordered g0 -> not (gt_n f0 g0)) ->
@@ -1051,16 +1153,11 @@ module Comparison
     not (not ((is_nan ff /\ is_nan gg) \/ ff .= gg))
 
 
-  (* [Positive extensions (explicit form)] 
+  (* [Strong extensions (explicit form)] 
    * First, prove a variant lemma w/ Alt-Ergo. 
    *)
   lemma gt0_p_sat0: forall f ff. ordered f -> 
     fp_in_ri ff f -> not (ff .> zeroF) -> not (gt0_p f)
-
-  (*lemma gt0_p_sat2: forall f. ordered f -> 
-    (exists ff. fp_in_ri ff f /\ not (ff .> zeroF)) ->
-    not (gt0_p f)
-    *)
 
   (* Then, prove the soundness claim w/ Alt-Ergo. 
    * In the following, we only describe the variant lemmas 
@@ -1073,7 +1170,7 @@ module Comparison
   lemma geq0_p_sat0: forall f ff. ordered f -> 
     fp_in_ri ff f -> not (ff .>= zeroF) -> not (geq0_p f)
 
-  (* [Positive extensions (implicit form)] 
+  (* [Strong extensions (implicit form)] 
    * First, prove a variant lemma w/ Alt-Ergo. 
    *)
   lemma gt_p_sat0: forall f g. ordered f -> ordered g -> 
