@@ -827,7 +827,7 @@ module Comparison
   use RealInterval
   use Subtraction
 
-  (* Weak operators. *)
+  (* Negative extensions. *)
 
   predicate gt0_n (f:t)
   = is_pinf f \/ f.u > 0.
@@ -865,7 +865,7 @@ module Comparison
   predicate neq_n (f g:t)
   = fpneq_n f g
 
-  (* Strong operators. *)
+  (* Positive extensions. *)
 
   predicate gt0_p (f:t)
   = not f.p_nan /\ not (is_ninf f) /\ f.l > 0.
@@ -940,7 +940,7 @@ module Comparison
 
   (* Correctness. *)
 
-  (* [Weak operator (explicit form)]
+  (* [Negative extension (explicit form)]
    * First, prove a slightly lengthy lemma w/ Alt-Ergo. 
    *)
   lemma gt0_n_unsat0: 
@@ -979,7 +979,7 @@ module Comparison
     not (ff .> gg)
   *)
 
-  (* [Weak operator (implicit form)]
+  (* [Negative extension (implicit form)]
    *)
   lemma gt_n_unsat0: 
     (forall f0 g0. ordered f0 -> ordered g0 -> not (gt_n f0 g0)) ->
@@ -1051,7 +1051,7 @@ module Comparison
     not (not ((is_nan ff /\ is_nan gg) \/ ff .= gg))
 
 
-  (* [Strong operator (explicit form)] 
+  (* [Positive extensions (explicit form)] 
    * First, prove a variant lemma w/ Alt-Ergo. 
    *)
   lemma gt0_p_sat0: forall f ff. ordered f -> 
@@ -1073,7 +1073,7 @@ module Comparison
   lemma geq0_p_sat0: forall f ff. ordered f -> 
     fp_in_ri ff f -> not (ff .>= zeroF) -> not (geq0_p f)
 
-  (* [Strong operator (implicit form)] 
+  (* [Positive extensions (implicit form)] 
    * First, prove a variant lemma w/ Alt-Ergo. 
    *)
   lemma gt_p_sat0: forall f g. ordered f -> ordered g -> 
