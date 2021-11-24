@@ -919,124 +919,6 @@ module Comparison
   lemma leq_gt: forall f. ordered f -> 
     (leq0_n f <-> not gt0_p f)
 
-  (* Implications between literals and its enclosures. *)
-
-  (* [Weak extensions; positive] *)
-
-  lemma gt0_n_imp: 
-    forall ff. ff .> zeroF ->
-    forall f. ordered f -> fp_in_ri ff f -> 
-    gt0_n f
-
-  lemma geq0_n_imp: 
-    forall ff. ff .>= zeroF ->
-    forall f. ordered f -> fp_in_ri ff f -> 
-    geq0_n f
-
-  lemma gt_n_imp: 
-    forall ff gg. ff .> gg ->
-    forall f g. ordered f -> ordered g -> fp_in_ri ff f -> fp_in_ri gg g -> 
-    gt_n f g
-
-  lemma geq_n_imp: 
-    forall ff gg. ff .>= gg ->
-    forall f g. ordered f -> ordered g -> fp_in_ri ff f -> fp_in_ri gg g -> 
-    geq_n f g
-
-  lemma fpeq_n_imp: 
-    forall ff gg. ff .= gg ->
-    forall f g. ordered f -> ordered g -> fp_in_ri ff f -> fp_in_ri gg g -> 
-    fpeq_n f g
-
-  lemma eq_n_imp: 
-    forall ff gg. ((is_nan ff /\ is_nan gg) \/ ff .= gg) ->
-    forall f g. ordered f -> ordered g -> fp_in_ri ff f -> fp_in_ri gg g -> 
-    eq_n f g
-
-  (* [Weak extensions; negative] *)
-
-  lemma lt0_n_imp: 
-    forall ff. not (ff .>= zeroF) ->
-    forall f. ordered f -> fp_in_ri ff f -> 
-    lt0_n f
-
-  lemma leq0_n_imp: 
-    forall ff. not (ff .> zeroF) ->
-    forall f. ordered f -> fp_in_ri ff f -> 
-    leq0_n f
-
-  lemma lt_n_imp: 
-    forall ff gg. not (ff .>= gg) ->
-    forall f g. ordered f -> ordered g -> fp_in_ri ff f -> fp_in_ri gg g -> 
-    lt_n f g
-
-  lemma leq_n_imp: 
-    forall ff gg. not (ff .> gg) ->
-    forall f g. ordered f -> ordered g -> fp_in_ri ff f -> fp_in_ri gg g -> 
-    leq_n f g
-
-  lemma fpneq_n_imp: 
-    forall ff gg. not (ff .= gg) ->
-    forall f g. ordered f -> ordered g -> fp_in_ri ff f -> fp_in_ri gg g -> 
-    fpneq_n f g
-
-  lemma neq_n_imp: 
-    forall ff gg. not ((is_nan ff /\ is_nan gg) \/ ff .= gg) ->
-    forall f g. ordered f -> ordered g -> fp_in_ri ff f -> fp_in_ri gg g -> 
-    neq_n f g
-
-  (* [Strong extensions; positive] *)
-
-  lemma gt0_p_imp: 
-    forall ff f. ordered f -> gt0_p f -> 
-    fp_in_ri ff f -> ff .> zeroF
-
-  lemma geq0_p_imp: 
-    forall ff f. ordered f -> geq0_p f -> 
-    fp_in_ri ff f -> ff .>= zeroF
-
-  lemma gt_p_imp: 
-    forall ff gg f g. ordered f -> ordered g -> gt_p f g -> 
-    fp_in_ri ff f -> fp_in_ri gg g -> ff .> gg
-
-  lemma geq_p_imp: 
-    forall ff gg f g. ordered f -> ordered g -> geq_p f g -> 
-    fp_in_ri ff f -> fp_in_ri gg g -> ff .>= gg
-
-  lemma fpeq_p_imp: 
-    forall ff gg f g. ordered f -> ordered g -> fpeq_p f g -> 
-    fp_in_ri ff f -> fp_in_ri gg g -> ff .= gg
-
-  lemma eq_p_imp: 
-    forall ff gg f g. ordered f -> ordered g -> eq_p f g -> 
-    fp_in_ri ff f -> fp_in_ri gg g -> ((is_nan ff /\ is_nan gg) \/ ff .= gg)
-
-  (* [Strong extensions; negative] *)
-
-  lemma lt0_p_imp: 
-    forall ff f. ordered f -> lt0_p f -> 
-    fp_in_ri ff f -> not (ff .>= zeroF)
-
-  lemma leq0_p_imp: 
-    forall ff f. ordered f -> leq0_p f -> 
-    fp_in_ri ff f -> not (ff .> zeroF)
-
-  lemma lt_p_imp: 
-    forall ff gg f g. ordered f -> ordered g -> lt_p f g -> 
-    fp_in_ri ff f -> fp_in_ri gg g -> not (ff .>= gg)
-
-  lemma leq_p_imp: 
-    forall ff gg f g. ordered f -> ordered g -> leq_p f g -> 
-    fp_in_ri ff f -> fp_in_ri gg g -> not (ff .> gg)
-
-  lemma fpneq_p_imp: 
-    forall ff gg f g. ordered f -> ordered g -> fpneq_p f g -> 
-    fp_in_ri ff f -> fp_in_ri gg g -> not (ff .= gg)
-
-  lemma neq_p_imp: 
-    forall ff gg f g. ordered f -> ordered g -> neq_p f g -> 
-    fp_in_ri ff f -> fp_in_ri gg g -> not ((is_nan ff /\ is_nan gg) \/ ff .= gg)
-
   (* Auxiliary lemmas. *)
 
   function ext (v:Float64.t) : t
@@ -1052,44 +934,125 @@ module Comparison
   lemma fp_ri_exists:
     forall ff. exists f. fp_in_ri ff f /\ ordered f
 
-  (*lemma gt0_n_unsat_: forall f. ordered f -> 
-    not (gt0_n f) ->
-    forall ff. fp_in_ri ff f -> not (ff .> zeroF)*)
+  predicate comp0 (ff:Float64.t)
+
+  val predicate comp0_n (f:t)
+    requires { ordered f }
+    ensures { not result ->
+      forall ff. fp_in_ri ff f -> not (comp0 ff) }
+
+  (* Proof w/ Coq: 
+   * intros h1 ff. apply comp0_n'spec with (f:=ext ff).
+   * - apply fp_ext.
+   * - apply h1. apply fp_ext.
+   * - apply fp_ext. Qed.
+   *)
+  lemma comp0_n_unsat: 
+    (forall f. ordered f -> not (comp0_n f)) ->
+    forall ff. not (comp0 ff)
+
+  val predicate comp0_p (f:t)
+    requires { ordered f }
+    ensures { forall ff. fp_in_ri ff f -> not (comp0 ff) -> not result }
+
+  (* Proved w/ Alt-Ergo. *)
+  lemma comp0_p_sat:
+    (forall ff0. not (comp0 ff0)) ->
+    forall f. ordered f -> (exists ff. fp_in_ri ff f) -> not (comp0_p f)
+
+  predicate comp (ff gg:Float64.t)
+
+  val predicate comp_n (f:t) (g:t)
+    requires { ordered f }
+    requires { ordered g }
+    ensures { not result ->
+      forall ff gg. 
+      (*(exists f. fp_in_ri ff f /\ ordered f) ->
+      (exists g. fp_in_ri gg g /\ ordered g) ->*)
+      fp_in_ri ff f -> fp_in_ri gg g ->
+      not (comp ff gg) }
+
+  (* Proof w/ Coq:
+   * intros h1 ff gg.
+   * apply comp_n'spec with (f:=ext ff) (g:=ext gg).
+   * - apply fp_ext.
+   * - apply fp_ext.
+   * - apply h1; apply fp_ext.
+   * - apply fp_ext.
+   * - apply fp_ext. Qed.
+   *)
+  lemma comp_n_unsat: 
+    (forall f g. ordered f -> ordered g -> not (comp_n f g)) ->
+    forall ff gg. not (comp ff gg)
+
+  val predicate comp_p (f:t) (g:t)
+    requires { ordered f }
+    requires { ordered g }
+    ensures { forall ff gg. fp_in_ri ff f -> fp_in_ri gg g -> 
+      not (comp ff gg) -> not result }
+
+  (* Proof w/ Coq: 
+   * intros h1 f g h2 h3 (ff,(gg,(h4,h5))).
+   * apply comp_p'spec with (ff:=ff) (gg:=gg).
+   * - apply h2.
+   * - apply h3.
+   * - apply h4.
+   * - apply h5.
+   * - apply h1.
+   *)
+  lemma comp_p_sat:
+    (forall ff0 gg0. not (comp ff0 gg0)) ->
+    forall f g. ordered f -> ordered g -> 
+    (exists ff gg. fp_in_ri ff f /\ fp_in_ri gg g) -> not (comp_p f g)
 
   (* Correctness. *)
 
   (* [Weak extension (explicit form)]
-   * First, prove a slightly lengthy lemma w/ Alt-Ergo. 
+   * First, verify the operator postcondition as for predicate comp0_n w/ Alt-Ergo. 
    *)
-
   lemma gt0_n_unsat0: 
-    (forall f0. ordered f0 -> not (gt0_n f0)) ->
-    forall ff. (exists f. fp_in_ri ff f /\ ordered f) ->
-    not (ff .> zeroF)
+    forall f. ordered f -> not (gt0_n f) ->
+    forall ff. fp_in_ri ff f -> not (ff .> zeroF)
 
-  (* Then, a shorter lemma can be proved w/ Coq.
-   * Proof. intros H ff. apply gt0_n_unsat0. apply H. apply fp_ri_exists. Qed. 
-   * In the following, we only describe the lengthy lemmas 
-   * for other weak operators. 
+  (* Then, we prove the soundness of unsat checking.
+   * Proof w/ Coq:
+   * intros h1 ff.
+   * apply gt0_n_unsat0 with (f:=ext ff).
+   * - apply fp_ext.
+   * - apply h1. apply fp_ext.
+   * - apply fp_ext. Qed.
+   *
+   * The same inference is generalized in lemma comp0_n_unsat.
+   * Therefore, we omit verifying this property for other operators.
    *)
   lemma gt0_n_unsat: 
     (forall f. ordered f -> not (gt0_n f)) ->
     forall ff. not (ff .> zeroF)
 
   lemma geq0_n_unsat0: 
-    (forall f0. ordered f0 -> not (geq0_n f0)) ->
-    forall ff. (exists f. fp_in_ri ff f /\ ordered f) ->
-    not (ff .>= zeroF)
+    forall f. ordered f -> not (geq0_n f) ->
+    forall ff. fp_in_ri ff f -> not (ff .>= zeroF)
+
+(*
+  val predicate comp_n (f:t) (g:t)
+    requires { ordered f }
+    requires { ordered g }
+    ensures { not result ->
+      forall ff gg. 
+      (*(exists f. fp_in_ri ff f /\ ordered f) ->
+      (exists g. fp_in_ri gg g /\ ordered g) ->*)
+      fp_in_ri ff f -> fp_in_ri gg g ->
+      not (comp ff gg) }
+*)
 
   (* [Weak extension (implicit form)]
+   * Cf. the postcondition of predicate comp_n.
    *)
   lemma gt_n_unsat0: 
-    (forall f0 g0. ordered f0 -> ordered g0 -> not (gt_n f0 g0)) ->
-    forall ff gg. 
-    (exists f g. fp_in_ri ff f /\ fp_in_ri gg g /\ not (gt_n f g)) ->
-    not (ff .> gg)
+    forall f g. ordered f -> ordered g -> not (gt_n f g) ->
+    forall ff gg. fp_in_ri ff f -> fp_in_ri gg g -> not (ff .> gg)
 
-  (* Then, prove a shorter lemma w/ Coq.
+  (* Then, we prove the soundness of unsat checking.
    * Proof. intros h1 ff gg. apply gt_n_unsat0. apply h1.
    * exists (ext ff). exists (ext gg). split. 
    * - apply fp_ext.
@@ -1101,67 +1064,52 @@ module Comparison
     forall ff gg. not (ff .> gg)
 
   lemma geq_n_unsat0: 
-    (forall f0 g0. ordered f0 -> ordered g0 -> not (geq_n f0 g0)) ->
-    forall ff gg. 
-    (exists f g. fp_in_ri ff f /\ fp_in_ri gg g /\ not (geq_n f g)) ->
-    not (ff .>= gg)
+    forall f g. ordered f -> ordered g -> not (geq_n f g) ->
+    forall ff gg. fp_in_ri ff f -> fp_in_ri gg g -> not (ff .>= gg)
 
   lemma fpeq_n_unsat0: 
-    (forall f0 g0. ordered f0 -> ordered g0 -> not (fpeq_n f0 g0)) ->
-    forall ff gg. 
-    (exists f g. fp_in_ri ff f /\ fp_in_ri gg g /\ not (fpeq_n f g)) ->
-    not (ff .= gg)
+    forall f g. ordered f -> ordered g -> not (fpeq_n f g) ->
+    forall ff gg. fp_in_ri ff f -> fp_in_ri gg g -> not (ff .= gg)
 
   lemma eq_n_unsat0: 
-    (forall f0 g0. ordered f0 -> ordered g0 -> not (eq_n f0 g0)) ->
-    forall ff gg. 
-    (exists f g. fp_in_ri ff f /\ fp_in_ri gg g /\ not (eq_n f g)) ->
+    forall f g. ordered f -> ordered g -> not (eq_n f g) ->
+    forall ff gg. fp_in_ri ff f -> fp_in_ri gg g ->
     not ((is_nan ff /\ is_nan gg) \/ ff .= gg)
 
   lemma lt0_n_unsat0: 
-    (forall f0. ordered f0 -> not (lt0_n f0)) ->
-    forall ff. (exists f. fp_in_ri ff f /\ ordered f) ->
-    not (not (ff .>= zeroF))
+    forall f. ordered f -> not (lt0_n f) ->
+    forall ff. fp_in_ri ff f -> not (not (ff .>= zeroF))
 
   lemma leq0_n_unsat0: 
-    (forall f0. ordered f0 -> not (leq0_n f0)) ->
-    forall ff. (exists f. fp_in_ri ff f /\ ordered f) ->
-    not (not (ff .> zeroF))
+    forall f. ordered f -> not (leq0_n f) ->
+    forall ff. fp_in_ri ff f -> not (not (ff .> zeroF))
 
   lemma lt_n_unsat0: 
-    (forall f0 g0. ordered f0 -> ordered g0 -> not (lt_n f0 g0)) ->
-    forall ff gg. 
-    (exists f g. fp_in_ri ff f /\ fp_in_ri gg g /\ ordered f /\ ordered g /\ not (lt_n f g)) ->
-    not (not (ff .>= gg))
+    forall f g. ordered f -> ordered g -> not (lt_n f g) ->
+    forall ff gg. fp_in_ri ff f -> fp_in_ri gg g -> not (not (ff .>= gg))
 
   lemma leq_n_unsat0: 
-    (forall f0 g0. ordered f0 -> ordered g0 -> not (leq_n f0 g0)) ->
-    forall ff gg. 
-    (exists f g. fp_in_ri ff f /\ fp_in_ri gg g /\ ordered f /\ ordered g /\ not (leq_n f g)) ->
-    not (not (ff .> gg))
+    forall f g. ordered f -> ordered g -> not (leq_n f g) ->
+    forall ff gg. fp_in_ri ff f -> fp_in_ri gg g -> not (not (ff .> gg))
 
   lemma fpneq_n_unsat0: 
-    (forall f0 g0. ordered f0 -> ordered g0 -> not (fpneq_n f0 g0)) ->
-    forall ff gg. 
-    (exists f g. fp_in_ri ff f /\ fp_in_ri gg g /\ ordered f /\ ordered g /\ not (fpneq_n f g)) ->
-    not (not (ff .= gg))
+    forall f g. ordered f -> ordered g -> not (fpneq_n f g) ->
+    forall ff gg. fp_in_ri ff f -> fp_in_ri gg g -> not (not (ff .= gg))
 
   lemma neq_n_unsat0: 
-    (forall f0 g0. ordered f0 -> ordered g0 -> not (neq_n f0 g0)) ->
-    forall ff gg. 
-    (exists f g. fp_in_ri ff f /\ fp_in_ri gg g /\ ordered f /\ ordered g /\ not (neq_n f g)) ->
+    forall f g. ordered f -> ordered g -> not (neq_n f g) ->
+    forall ff gg. fp_in_ri ff f -> fp_in_ri gg g ->
     not (not ((is_nan ff /\ is_nan gg) \/ ff .= gg))
 
 
   (* [Strong extensions (explicit form)] 
-   * First, prove a variant lemma w/ Alt-Ergo. 
+   * First, verify the operator postcondition as for predicate comp0_p w/ Alt-Ergo. 
    *)
-  lemma gt0_p_sat0: forall f ff. ordered f -> 
-    fp_in_ri ff f -> not (ff .> zeroF) -> not (gt0_p f)
+  lemma gt0_p_sat0: forall f. ordered f -> 
+    forall ff. fp_in_ri ff f -> not (ff .> zeroF) -> not (gt0_p f)
 
-  (* Then, prove the soundness claim w/ Alt-Ergo. 
-   * In the following, we only describe the variant lemmas 
-   * for other strong operators.
+  (* Then, prove the soundness of sat checking w/ Alt-Ergo. 
+   * For other operators, we only verify the postcondition.
    *)
   lemma gt0_p_sat: 
     (forall ff0. not (ff0 .> zeroF)) ->
@@ -1171,20 +1119,11 @@ module Comparison
     fp_in_ri ff f -> not (ff .>= zeroF) -> not (geq0_p f)
 
   (* [Strong extensions (implicit form)] 
-   * First, prove a variant lemma w/ Alt-Ergo. 
+   * Cf. the postcondition of predicate comp_p. 
    *)
   lemma gt_p_sat0: forall f g. ordered f -> ordered g -> 
     forall ff gg. fp_in_ri ff f -> fp_in_ri gg g -> 
     not (ff .> gg) -> not (gt_p f g)
-
-  (* Then, prove the soundness claim w/ Coq. 
-   * Proof. intros. apply gt_p_sat0 with (ff:=ff) (gg:=gg); auto. Qed.
-   *)
-  lemma gt_p_sat: 
-    (forall ff0 gg0. not (ff0 .> gg0)) ->
-    forall f g. ordered f -> ordered g -> 
-    (exists ff gg. fp_in_ri ff f /\ fp_in_ri gg g) -> 
-    not (gt_p f g)
 
   lemma geq_p_sat0: forall f g. ordered f -> ordered g -> 
     forall ff gg. fp_in_ri ff f -> fp_in_ri gg g -> 

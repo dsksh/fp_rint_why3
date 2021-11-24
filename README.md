@@ -12,12 +12,12 @@ This repository aims to provide a correctness proof, which addresses the followi
     - We consider two interval extensions, *weak* and *strong*, of comparison operators.
         - Weak extensions are used for unsat checking of FPA logic formulas.
         - Strong extensions are used for sat checking.
+    - We only consider comparisons between intervals or between an interval and zero.
     - We verify the following:
-        - Lemmas `*_n_imp`: *Weakness* of the weak interval extensions of atomic predicates.
-        - Lemmas `*_p_inp`: *Strongness* of the strong interval extensions of atomic predicates.
-        - Lemmas `*_n_unsat`: "*If the negative extension is unsat, then so is the original literal*."
+        - Lemmas `*_n_unsat`: "*If the weak extension is unsat, then so is the original literal*."
         - "*If the strong extension is sat with intervals that contain FP numbers, then so is the original literal*."
-            - Lemmas `*_p_sat`: It is rephased as: "*If a literal is unsat, then, for any intervals that contain FP numbers, the strong extension is unsat*."
+            - We in fact verify the contraposition:
+            - Lemmas `*_p_sat`: "*If a literal is unsat, then, for any intervals that contain an FP number, the strong extension is unsat*."
 
 <br />
 
@@ -50,6 +50,8 @@ D. Ishii, T. Tomita and T. Aoki: Approximate Translation from Floating-Point to 
 
 
 ## Verification Result
+
+Used machine: MacBook Pro w/ 2GHz Intel Core i5 and 16GB RAM.
 
 <image src="images/rint_add.png" width="540" />
 <image src="images/rint_sub.png" width="540" />
