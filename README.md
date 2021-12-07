@@ -23,7 +23,7 @@ This repository aims to provide a correctness proof, which addresses the followi
 
 Reference:
 
-D. Ishii, T. Tomita and T. Aoki: Approximate Translation from Floating-Point to Real-Interval Arithmetic, 2021 (to appear).
+D. Ishii, T. Tomita and T. Aoki: Approximate Translation from Floating-Point to Real-Interval Arithmetic, [arXiv:2112.02804](http://arxiv.org/abs/2112.02804), 2021. 
 
 
 ## Used Tools
